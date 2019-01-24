@@ -1,0 +1,23 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1548228123036.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "878468672",
+    "id" : "F9D15475",
+    "lastKnownWriteTime" : 1548229960,
+    "last_content_update" : 1548229960542,
+    "path" : "~/R/manajemen-proyek-dashboard/pptx.Rmd",
+    "project_path" : "pptx.Rmd",
+    "properties" : {
+        "cursorPosition" : "5,0",
+        "scrollLine" : "0",
+        "tempName" : "Untitled1"
+    },
+    "relative_order" : 5,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_markdown"
+}

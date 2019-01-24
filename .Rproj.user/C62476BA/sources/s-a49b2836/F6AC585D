@@ -1,0 +1,22 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1533871675411.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "F6AC585D",
+    "lastKnownWriteTime" : 1529565270,
+    "last_content_update" : 1529565270,
+    "path" : "/srv/shiny-server/projectfad/global.r",
+    "project_path" : "global.r",
+    "properties" : {
+        "cursorPosition" : "16,34",
+        "scrollLine" : "45"
+    },
+    "relative_order" : 3,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

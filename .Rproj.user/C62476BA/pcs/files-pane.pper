@@ -1,0 +1,9 @@
+{
+    "path" : "/srv/shiny-server/projectfad",
+    "sortOrder" : [
+        {
+            "ascending" : true,
+            "columnIndex" : 2
+        }
+    ]
+}

@@ -1,0 +1,21 @@
+{
+    "collab_server" : "",
+    "contents" : "library(shinydashboard)\nlibrary(openxlsx)\nlibrary(tidyverse)\n\n\nraw_projects <- read.xlsx(\"data/capex ogp fad 290917 raw.xlsx\")\n\n# add plan, edc, and toc column\nraw_projects$plan <- 79\nraw_projects$edc <- format(as.Date(42736, origin = \"1899-12-30\"), \"%d-%b-%y\")\n#raw_projects$toc <- format(as.Date(42795, origin = \"1900-01-01\"), \"%d-%b-%y\")\n\nraw_projects$toc <- 42795\n\n# testing out of contract ui and algorithm\nraw_projects$toc[17999:35910] <- 43457\nraw_projects$toc <- format(as.Date(raw_projects$toc, origin = \"1899-12-30\"))\n\ncontract_status <- raw_projects %>% \n  group_by(NO_KONTRAK) %>% \n  summarise(progress = mean(`ROUND(A.PRO_ACTUAL,3)`), plan = mean(plan), \n            nilai = sum(NIKON), ny.bast = sum(NIKON[STATUS != \"BAST-1\"]),\n            location = n(), og.location = length(NO_KONTRAK[STATUS != \"BAST-1\"]),\n            lag.location = length(NO_KONTRAK[`ROUND(A.PRO_ACTUAL,3)` < plan]),\n            sto = n_distinct(NM_LOKASI),\n            reg = paste(sort(unique(REG)), collapse = \", \")) %>% \n  arrange(progress)\n\nprojects <- raw_projects %>% \n  distinct(NO_KONTRAK, .keep_all = TRUE) %>% \n  select(NO_KONTRAK, NM_TEMATIK, TAHUN, NM_PROYEK, NM_VENDOR, MITRA, edc, toc, real = `ROUND(A.PRO_ACTUAL,3)`)\n\n#Limit project name character to 50 words only\nprojects$NM_PROYEK <- substr(projects$NM_PROYEK, 1, 45)\n\n# Monitoring project based on progress\ncontract_status <- contract_status %>% \n  mutate(no.kontrak = substr(NO_KONTRAK, 7, regexpr(\"/\", NO_KONTRAK)-1), \n         status = if_else(progress <= 20, \"crimson\",\n                          if_else(progress <= 50, \"orange\", \n                                  if_else(progress <= 85,\"goldenrod\", \n                                          if_else(progress <= 90, \"DodgerBlue\", \n                                                  if_else(progress <= 95, \"MediumSlateBlue\", \"MediumSeaGreen\")))) \n                   ),\n       schedule = if_else(progress - plan >= 0, \"MediumSeaGreen\",\n                    if_else(progress - plan >= -10, \"goldenrod\", \"crimson\"\n                    )\n                  )\n  )  \n\n\n# List of projects\nprojects <- left_join(projects, contract_status, by = \"NO_KONTRAK\")\n\n# flagging late projects\nprojects <- projects %>% mutate(late = if_else(as.Date(toc) < Sys.Date(), \"*\", \"\"))\n\n#change toc format\nprojects$toc <- format(as.Date(projects$toc), \"%d-%b-%y\")\n\n# List of on going projects\nongoing <- projects %>%\n           filter(progress < 100)\n\n# Total Not yet BAST-1\nnybast.location <- raw_projects %>% filter(STATUS  != \"BAST-1\")\nnybast <- sum(nybast.location$NIKON)\n\n#total lag projects\nlag.projects <- length(ongoing$NO_KONTRAK[ongoing$progress < ongoing$plan])\nlate.projects <- length(ongoing$NO_KONTRAK[ongoing$late == \"*\"])\nlag.locations <- length(nybast.location$KET_LOKASI[nybast.location$`ROUND(A.PRO_ACTUAL,3)` < nybast.location$plan])\nlag.locations <- formatC(lag.locations, big.mark = \".\", \n                         decimal.mark = \",\", format = \"f\", drop0trailing = TRUE) \n\ntelkomakses <- ongoing %>% filter(MITRA == \"PTTA\") %>% arrange(progress)\nnontelkomakses <- ongoing %>% filter(MITRA == \"NON TA\") %>% arrange(progress)\n\n\n",
+    "created" : 1512114106193.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "2838533051",
+    "id" : "C17AEEA3",
+    "lastKnownWriteTime" : 1514204805,
+    "last_content_update" : 1514204805724,
+    "path" : "D:/Pram Doc/Learning R/learning shinydashboard/global.r",
+    "project_path" : "global.r",
+    "properties" : {
+        "tempName" : "Untitled1"
+    },
+    "relative_order" : 3,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

@@ -1,0 +1,169 @@
+library(shinydashboard)
+library(openxlsx)
+library(tidyverse)
+
+# Select latest database file
+project.file <- sort(dir("data/"), TRUE)[1]
+project.file <- paste0("data/", project.file)
+
+raw_projects <- read.csv2(project.file)
+
+# Filter unit FAD only
+raw_projects <- raw_projects %>%
+  filter(NM_UNIT %in% c(
+    "ACCESS MANAGEMENT",
+    "DIVRE-1 ENG & DEPLOYMENT",
+    "DIVRE-2 ENG & DEPLOYMENT I",
+    "DIVRE-2 ENG & DEPLOYMENT II",
+    "DIVRE-3 ENG & DEPLOYMENT",
+    "DIVRE-4 ENG & DEPLOYMENT",
+    "DIVRE-6 ENG & DEPLOYMENT",
+    "DIVRE-7 ENG & DEPLOYMENT",
+    "FIXED ACCESS DEPLOYMENT",
+    "PLANNING, ENGINEERING & DEPLOYMENT"
+                         ),
+	 NM_TEMATIK != "PELOLOSAN", 
+	 !grepl("DR", NO_KONTRAK)
+  )
+
+# Add mitra column
+raw_projects <- raw_projects %>%
+  mutate(MITRA = if_else(NM_VENDOR == "TELKOM AKSES", "PTTA", "NON TA"))
+
+# Add lead or lag location
+raw_projects <- raw_projects %>%
+  mutate(JADWAL = if_else(ROUND.A.PRO_PLAN.3. > ROUND.A.PRO_ACTUAL.3., "Lag", "Lead"))
+
+# Format EDC and TOC date
+raw_projects$TG_EDC <- substr(raw_projects$TG_EDC, 1, 10)
+raw_projects$TG_TOC <- substr(raw_projects$TG_TOC, 1, 10)
+raw_projects$TG_EDC <- format(as.Date(raw_projects$TG_EDC), "%d-%b-%y")
+
+# Add year and month of BAST
+#raw_projects <- raw_projects %>%
+#  mutate(
+#        y.bast = substr(TO_CHAR.A.TG_ACTUAL_FINISH..MM.YYYY.., 4, 7), 
+#        m.bast = substr(TO_CHAR.A.TG_ACTUAL_FINISH..MM.YYYY.., 1, 2)
+#         )
+
+# Add last BAST date
+#raw_projects <- raw_projects %>%
+#  mutate(
+#    ym.bast = paste0(y.bast, m.bast, collapse = "-")
+#  )
+
+raw_projects$ym.bast <- paste0(substr(raw_projects$TO_CHAR.A.TG_ACTUAL_FINISH..MM.YYYY.., 4, 7),
+                               substr(raw_projects$TO_CHAR.A.TG_ACTUAL_FINISH..MM.YYYY.., 1, 2)
+                               )
+
+# add plan, edc, and toc column
+#raw_projects$plan <- 79
+#raw_projects$edc <- format(as.Date(42736, origin = "1899-12-30"), "%d-%b-%y")
+#raw_projects$toc <- format(as.Date(42795, origin = "1900-01-01"), "%d-%b-%y")
+
+#raw_projects$toc <- 42795
+
+# testing out of contract ui and algorithm
+#raw_projects$toc[10000:21115] <- 43457
+#raw_projects$toc <- format(as.Date(raw_projects$toc, origin = "1899-12-30"))
+
+contract_status <- raw_projects %>% 
+  group_by(NO_KONTRAK) %>% 
+  summarise(progress = mean(ROUND.A.PRO_ACTUAL.3.), plan = mean(ROUND.A.PRO_PLAN.3.), 
+            nilai = sum(NIKON), ny.bast = sum(NIKON[STATUS != "BAST-1"]),
+            location = n(), og.location = length(NO_KONTRAK[STATUS != "BAST-1"]),
+            lag.location = length(NO_KONTRAK[ROUND.A.PRO_ACTUAL.3. < ROUND.A.PRO_PLAN.3.]),
+            sto = n_distinct(NM_LOKASI),
+            reg = paste(sort(unique(REG)), collapse = ", "), 
+            loc.pre = length(NO_KONTRAK[STATUS == "PREPARING"]), 
+            loc.del = length(NO_KONTRAK[STATUS == "DELIVERY"]), 
+            loc.ins = length(NO_KONTRAK[STATUS == "INSTALLASI"]), 
+            loc.tc  = length(NO_KONTRAK[STATUS == "TEST COMM"]), 
+            loc.ut  = length(NO_KONTRAK[STATUS == "UJI TERIMA"]), 
+            loc.bas = length(NO_KONTRAK[STATUS == "BAST-1"]),
+            last.bast = max(ym.bast, na.rm = TRUE)
+            ) %>% 
+  arrange(progress)
+
+projects <- raw_projects %>% 
+  distinct(NO_KONTRAK, .keep_all = TRUE) %>% 
+  select(NO_KONTRAK, NM_TEMATIK, NM_PROYEK, NM_VENDOR, MITRA, TG_EDC, TG_TOC, real = ROUND.A.PRO_ACTUAL.3.)
+
+#Limit project name character to 50 words only
+projects$NM_PROYEK <- substr(projects$NM_PROYEK, 1, 45)
+
+# Monitoring project based on progress
+contract_status <- contract_status %>% 
+  mutate(no.kontrak = substr(NO_KONTRAK, 7, regexpr("/", NO_KONTRAK)-1), 
+         status = if_else(progress <= 20, "crimson",
+                          if_else(progress <= 50, "orange", 
+                                  if_else(progress <= 85,"goldenrod", 
+                                          if_else(progress <= 90, "DodgerBlue", 
+                                                  if_else(progress <= 95, "MediumSlateBlue", "MediumSeaGreen")))) 
+                   ),
+       schedule = if_else(progress - plan >= 0, "MediumSeaGreen",
+                    if_else(progress - plan >= -10, "goldenrod", "crimson"
+                    )
+                  )
+  )  
+
+
+# List of projects
+projects <- left_join(projects, contract_status, by = "NO_KONTRAK")
+
+# exclude tematik pelolosan and nilai more than 1
+projects <- projects %>% filter(nilai > 30)
+
+# flagging late projects
+projects <- projects %>% mutate(late = if_else(as.Date(TG_TOC) < Sys.Date(), "*", ""))
+
+# change toc format
+projects$TG_TOC <- format(as.Date(projects$TG_TOC), "%d-%b-%y")
+
+# change vendor name to char format
+projects$NM_VENDOR <- as.character(projects$NM_VENDOR)
+
+# List of on going projects
+ongoing <- projects %>%
+           filter(progress < 100)
+
+# Total Not yet BAST-1
+nybast.location <- raw_projects %>% filter(STATUS  != "BAST-1")
+nybast <- sum(nybast.location$NIKON)
+
+# total lag projects
+lag.projects <- length(ongoing$NO_KONTRAK[ongoing$progress < ongoing$plan])
+late.projects <- length(ongoing$NO_KONTRAK[ongoing$late == "*"])
+lag.locations <- length(nybast.location$KET_LOKASI[nybast.location$ROUND.A.PRO_ACTUAL.3. < nybast.location$ROUND.A.PRO_PLAN.3.])
+lag.locations <- formatC(lag.locations, big.mark = ".", 
+                         decimal.mark = ",", format = "f", drop0trailing = TRUE) 
+
+# Split projects based on Mitra
+telkomakses <- ongoing %>% filter(MITRA == "PTTA") %>% arrange(progress)
+nontelkomakses <- ongoing %>% filter(MITRA == "NON TA") %>% arrange(progress)
+
+# Detail location data frame
+detail.location <- raw_projects %>% 
+  select(REG, NM_LOKASI, KET_LOKASI, NIKON, ROUND.A.PRO_PLAN.3., ROUND.A.PRO_ACTUAL.3., JADWAL, STATUS, NO_KONTRAK)
+
+detail.location$NIKON <- formatC(
+  detail.location$NIKON, big.mark = ".", decimal.mark = ",", 
+  format = "f", drop0trailing = TRUE)
+
+# Change column names
+colnames(detail.location)[2] <- "STO"
+colnames(detail.location)[3] <- "Lokasi"
+colnames(detail.location)[1] <- "Reg"
+colnames(detail.location)[4] <- "Nilai"
+colnames(detail.location)[5] <- "Plan (%)"
+colnames(detail.location)[6] <- "Real (%)"
+colnames(detail.location)[7] <- "Jadwal"
+colnames(detail.location)[8] <- "Status"
+
+# Deviation progress icon
+progress.icon <- if_else(mean(ongoing$progress) >= mean(ongoing$plan), "plus", "minus")
+
+# Deviation progress
+progress.deviation <- abs(mean(ongoing$progress) - mean(ongoing$plan))
+progress.deviation <- paste0(formatC(progress.deviation, big.mark = ".", 
+                                     decimal.mark = ",", format = "f", digits = 2), "%")

@@ -1,0 +1,22 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1547629968231.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "156645068",
+    "id" : "74B5C930",
+    "lastKnownWriteTime" : 1548305501,
+    "last_content_update" : 1548305501283,
+    "path" : "~/R/manajemen-proyek-dashboard/ui.R",
+    "project_path" : "ui.R",
+    "properties" : {
+        "cursorPosition" : "162,21",
+        "scrollLine" : "149"
+    },
+    "relative_order" : 1,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

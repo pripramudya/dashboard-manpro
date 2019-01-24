@@ -1,0 +1,13 @@
+name: manajemen-proyek
+title: manajemen-proyek
+username:
+account: pripramudya
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 660740
+bundleId: 1831216
+url: https://pripramudya.shinyapps.io/manajemen-proyek/
+when: 1548235297.08498
+asMultiple: FALSE
+asStatic: FALSE
+ignoredFiles: .global.r.un~|.project.query.r.un~|.project.query.sh.un~

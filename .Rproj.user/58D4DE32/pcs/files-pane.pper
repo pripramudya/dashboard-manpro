@@ -1,0 +1,9 @@
+{
+    "path" : "~/R/project-dashboard-blog",
+    "sortOrder" : [
+        {
+            "ascending" : true,
+            "columnIndex" : 2
+        }
+    ]
+}
