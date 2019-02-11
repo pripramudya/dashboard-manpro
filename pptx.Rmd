@@ -6,7 +6,7 @@ output: powerpoint_presentation
 
 
 ```{r, include = FALSE}
-library(tidyverse)
+library(dplyr)
 # Membaca file objek global
 proyek <- readRDS("proyek.rds")
 total <- length(proyek$NO_PROYEK) %>% as.character()
