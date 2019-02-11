@@ -1,7 +1,3 @@
-library(shinydashboard)
-library(shinyBS)
-library(DT)
-
 function(input, output, session) {
 
   # Pop up menu proyek prioritas 1

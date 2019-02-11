@@ -1,6 +1,10 @@
 library(shinydashboard)
 library(openxlsx)
-library(tidyverse)
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(shinyBS)
+library(DT)
 
 # Membaca file daftar_proyek.xlsx
 db.proyek <- read.xlsx("data/daftar_proyek.xlsx")

@@ -1,7 +1,3 @@
-library(shinydashboard)
-library(shinyBS)
-library(DT)
-
 dashboardPage( 
   
   # Judul dashboard
