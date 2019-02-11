@@ -5,6 +5,9 @@ library(tidyr)
 library(ggplot2)
 library(shinyBS)
 library(DT)
+library(rmarkdown)
+library(knitr)
+
 
 # Membaca file daftar_proyek.xlsx
 db.proyek <- read.xlsx("data/daftar_proyek.xlsx")
